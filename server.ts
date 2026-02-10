@@ -31,7 +31,7 @@ function cleanupStaleRooms() {
   const now = Date.now();
   for (const [code, room] of rooms.entries()) {
     // Remove rooms older than 2 hours or both players disconnected for 60s+
-    if (now - room.createdAt > 2 * 60 * 60 * 1000) {
+    if (now - room.createdAt > 4 * 60 * 60 * 1000) {
       rooms.delete(code);
     } else if (!room.hostSocket && !room.guestSocket && now - room.createdAt > 60_000) {
       rooms.delete(code);
@@ -56,8 +56,8 @@ const io = new Server(httpServer, {
     },
     methods: ['GET', 'POST'],
   },
-  pingInterval: 10_000,
-  pingTimeout: 30_000,
+  pingInterval: 25_000,
+  pingTimeout: 60_000,
 });
 
 app.get('/', (_req, res) => {
