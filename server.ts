@@ -110,9 +110,13 @@ io.on('connection', (socket: Socket) => {
       return;
     }
 
-    if (room.guestSocket) {
+    if (room.guestSocket && room.guestSocket.connected) {
       socket.emit('join_error', { reason: 'Room is full' });
       return;
+    }
+    // Clean up stale guest socket if it exists but disconnected
+    if (room.guestSocket && !room.guestSocket.connected) {
+      room.guestSocket = null;
     }
 
     room.guestSocket = socket;
@@ -178,7 +182,10 @@ io.on('connection', (socket: Socket) => {
       return;
     }
 
-    if (data.role === 'host' && !room.hostSocket) {
+    if (data.role === 'host' && (!room.hostSocket || !room.hostSocket.connected)) {
+      if (room.hostSocket && !room.hostSocket.connected) {
+        room.hostSocket = null; // Clean up stale socket
+      }
       room.hostSocket = socket;
       currentRoom = code;
       currentRole = 'host';
@@ -186,7 +193,10 @@ io.on('connection', (socket: Socket) => {
       room.guestSocket?.emit('game_message', { type: 'opponent_reconnected' });
       socket.emit('rejoined_room', { roomCode: code });
       console.log(`[${socket.id}] Host rejoined room ${code}`);
-    } else if (data.role === 'guest' && !room.guestSocket) {
+    } else if (data.role === 'guest' && (!room.guestSocket || !room.guestSocket.connected)) {
+      if (room.guestSocket && !room.guestSocket.connected) {
+        room.guestSocket = null; // Clean up stale socket
+      }
       room.guestSocket = socket;
       currentRoom = code;
       currentRole = 'guest';
